@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bomb Defusal Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .bomb-body {
+            background: linear-gradient(145deg, #333333, #1a1a1a);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        .bomb-top {
+            background: linear-gradient(145deg, #555555, #333333);
+        }
+        .display {
+            background: #0a0a0a;
+            box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.3);
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.8);
+        }
+        .key {
+            transition: all 0.1s;
+        }
+        .key:active {
+            transform: scale(0.95);
+            background: #444 !important;
+        }
+        .card {
+            transition: all 0.3s;
+            transform-style: preserve-3d;
+        }
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            backface-visibility: hidden;
+        }
+        .card-back {
+            transform: rotateY(180deg);
+        }
+        @keyframes pulse {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+        .timer-danger {
+            animation: pulse 1s infinite;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        .shake {
+            animation: shake 0.5s;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="max-w-md w-full">
+        <h1 class="text-3xl font-bold text-center text-red-600 mb-6">BOMB DEFUSAL</h1>
+        
+        <!-- Bomb Display -->
+        <div class="bomb-body rounded-2xl p-6 mb-8 relative overflow-hidden">
+            <!-- Bomb top -->
+            <div class="bomb-top rounded-t-full h-16 -mx-6 -mt-6 mb-6 flex items-center justify-center">
+                <div class="w-4 h-4 bg-red-600 rounded-full"></div>
+            </div>
+            
+            <!-- Timer Display -->
+            <div class="display rounded-lg p-4 mb-6 text-center">
+                <div id="timer" class="text-green-500 font-mono text-4xl">02:00</div>
+            </div>
+            
+            <!-- Password Display -->
+            <div class="display rounded-lg p-4 mb-6">
+                <div class="text-green-500 font-mono text-2xl text-center tracking-widest" id="password-display">______</div>
+            </div>
+            
+            <!-- Keypad -->
+            <div class="grid grid-cols-3 gap-3 mb-4">
+                <button class="key bg-gray-700 text-white rounded-lg py-4 text-2xl font-bold" data-key="1">1</button>
+                <button class="key bg-gray-700 text-white rounded-lg py-4 text-2xl font-bold" data-key="2">2</button>
+                <button class="key bg-gray-700 text-white rounded-lg py-4 text-2xl font-bold" data-key="3">3</button>
+                <button class="key bg-gray-700 text-white rounded-lg py-4 text-2xl font-bold" data-key="4">4</button>
+                <button class="key bg-gray-700 text-white rounded-lg py-4 text-2xl font-bold" data-key="5">5</button>
+                <button class="key bg-gray-700 text-white rounded-lg py-4 text-2xl font-bold" data-key="6">6</button>
+                <button class="key bg-gray-700 text-white rounded-lg py-4 text-2xl font-bold" data-key="7">7</button>
+                <button class="key bg-gray-700 text-white rounded-lg py-4 text-2xl font-bold" data-key="8">8</button>
+                <button class="key bg-gray-700 text-white rounded-lg py-4 text-2xl font-bold" data-key="9">9</button>
+                <button class="key bg-gray-700 text-white rounded-lg py-4 text-2xl font-bold" data-key="0">0</button>
+                <button class="key bg-red-600 text-white rounded-lg py-4 text-2xl font-bold" id="clear-btn">C</button>
+                <button class="key bg-green-600 text-white rounded-lg py-4 text-2xl font-bold" id="enter-btn">E</button>
+            </div>
+        </div>
+        
+        <!-- Password Cards -->
+        <div class="text-white text-center mb-4">Find the correct PIN in one of these cards:</div>
+        <div class="grid grid-cols-3 gap-4 mb-8">
+            <div class="card relative cursor-pointer h-32" id="card1" onclick="flipCard(0)">
+                <div class="card-face absolute w-full h-full bg-blue-600 rounded-lg flex items-center justify-center font-bold text-xl">
+                    CARD 1
+                </div>
+                <div class="card-face card-back absolute w-full h-full bg-gray-700 rounded-lg flex items-center justify-center font-mono text-xl">
+                    <span id="card1-pin"></span>
+                </div>
+            </div>
+            <div class="card relative cursor-pointer h-32" id="card2" onclick="flipCard(1)">
+                <div class="card-face absolute w-full h-full bg-blue-600 rounded-lg flex items-center justify-center font-bold text-xl">
+                    CARD 2
+                </div>
+                <div class="card-face card-back absolute w-full h-full bg-gray-700 rounded-lg flex items-center justify-center font-mono text-xl">
+                    <span id="card2-pin"></span>
+                </div>
+            </div>
+            <div class="card relative cursor-pointer h-32" id="card3" onclick="flipCard(2)">
+                <div class="card-face absolute w-full h-full bg-blue-600 rounded-lg flex items-center justify-center font-bold text-xl">
+                    CARD 3
+                </div>
+                <div class="card-face card-back absolute w-full h-full bg-gray-700 rounded-lg flex items-center justify-center font-mono text-xl">
+                    <span id="card3-pin"></span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Message Display -->
+        <div id="message" class="text-center text-xl font-bold mb-4 min-h-8"></div>
+        
+        <!-- Restart Button -->
+        <button id="restart-btn" class="hidden w-full bg-yellow-600 text-white py-3 rounded-lg font-bold text-lg">
+            RESTART MISSION
+        </button>
+    </div>
+
+    <script>
+        // Game variables
+        let correctPin = "";
+        let enteredPin = "";
+        let timeLeft = 120; // 2 minutes in seconds
+        let timerInterval;
+        let gameActive = false;
+        let correctCardIndex = -1;
+        let audioContext;
+        let sounds = {};
+
+        // DOM elements
+        const passwordDisplay = document.getElementById('password-display');
+        const timerDisplay = document.getElementById('timer');
+        const messageDisplay = document.getElementById('message');
+        const restartBtn = document.getElementById('restart-btn');
+        const bombBody = document.querySelector('.bomb-body');
+        const cardPins = [
+            document.getElementById('card1-pin'),
+            document.getElementById('card2-pin'),
+            document.getElementById('card3-pin')
+        ];
+        const cards = [
+            document.getElementById('card1'),
+            document.getElementById('card2'),
+            document.getElementById('card3')
+        ];
+
+        // Initialize audio
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Sound URLs
+                const soundUrls = {
+                    explosion: 'https://assets.mixkit.co/sfx/preview/mixkit-explosion-1684.mp3',
+                    success: 'https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3',
+                    click: 'https://assets.mixkit.co/sfx/preview/mixkit-modern-click-box-check-1120.mp3',
+                    tick: 'https://assets.mixkit.co/sfx/preview/mixkit-clock-countdown-bleeps-916.mp3',
+                    error: 'https://assets.mixkit.co/sfx/preview/mixkit-software-interface-remove-2578.mp3'
+                };
+
+                // Load all sounds
+                Object.keys(soundUrls).forEach(key => {
+                    fetch(soundUrls[key])
+                        .then(response => response.arrayBuffer())
+                        .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
+                        .then(audioBuffer => {
+                            sounds[key] = audioBuffer;
+                        })
+                        .catch(error => {
+                            console.error('Error loading sound:', key, error);
+                        });
+                });
+            } catch (e) {
+                console.error("Audio initialization failed:", e);
+            }
+        }
+
+        // Play sound function
+        function playSound(soundName) {
+            if (!sounds[soundName] || !audioContext) return;
+            
+            try {
+                const source = audioContext.createBufferSource();
+                source.buffer = sounds[soundName];
+                source.connect(audioContext.destination);
+                source.start(0);
+            } catch (e) {
+                console.error("Error playing sound:", soundName, e);
+            }
+        }
+
+        // Initialize the game
+        function initGame() {
+            // Generate a random 6-digit PIN
+            correctPin = Math.floor(100000 + Math.random() * 900000).toString();
+            
+            // Reset entered PIN
+            enteredPin = "";
+            updatePasswordDisplay();
+            
+            // Reset timer
+            timeLeft = 120;
+            updateTimerDisplay();
+            
+            // Hide message and restart button
+            messageDisplay.textContent = "";
+            messageDisplay.className = "text-center text-xl font-bold mb-4 min-h-8";
+            restartBtn.classList.add('hidden');
+            
+            // Reset bomb appearance
+            bombBody.classList.remove('shake');
+            
+            // Generate cards - one with correct PIN, others with random PINs
+            correctCardIndex = Math.floor(Math.random() * 3);
+            for (let i = 0; i < 3; i++) {
+                cards[i].classList.remove('flipped');
+                if (i === correctCardIndex) {
+                    cardPins[i].textContent = correctPin;
+                } else {
+                    // Generate a different 6-digit PIN
+                    let fakePin;
+                    do {
+                        fakePin = Math.floor(100000 + Math.random() * 900000).toString();
+                    } while (fakePin === correctPin);
+                    cardPins[i].textContent = fakePin;
+                }
+            }
+            
+            // Start timer
+            clearInterval(timerInterval);
+            gameActive = true;
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        // Update the password display with underscores for empty digits
+        function updatePasswordDisplay() {
+            let display = "";
+            for (let i = 0; i < 6; i++) {
+                display += enteredPin.length > i ? enteredPin[i] : "_";
+                if (i < 5) display += " ";
+            }
+            passwordDisplay.textContent = display;
+        }
+
+        // Update the timer display
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Change color when time is running low
+            if (timeLeft <= 30) {
+                timerDisplay.classList.add('text-red-500', 'timer-danger');
+                timerDisplay.classList.remove('text-green-500');
+            } else {
+                timerDisplay.classList.remove('text-red-500', 'timer-danger');
+                timerDisplay.classList.add('text-green-500');
+            }
+        }
+
+        // Timer countdown
+        function updateTimer() {
+            timeLeft--;
+            updateTimerDisplay();
+            
+            // Play tick sound when time is running out
+            if (timeLeft <= 10 && timeLeft > 0) {
+                playSound('tick');
+            }
+            
+            if (timeLeft <= 0) {
+                playSound('explosion');
+                bombBody.classList.add('shake');
+                endGame(false);
+            }
+        }
+
+        // Flip a card to reveal its PIN
+        function flipCard(index) {
+            if (!gameActive) return;
+            
+            playSound('click');
+            cards[index].classList.add('flipped');
+        }
+
+        // End the game (win or lose)
+        function endGame(win) {
+            gameActive = false;
+            clearInterval(timerInterval);
+            
+            if (win) {
+                playSound('success');
+                messageDisplay.textContent = "BOMB DEFUSED! MISSION SUCCESS!";
+                messageDisplay.className = "text-center text-xl font-bold mb-4 min-h-8 text-green-500";
+            } else {
+                playSound('explosion');
+                messageDisplay.textContent = "BOOM! MISSION FAILED!";
+                messageDisplay.className = "text-center text-xl font-bold mb-4 min-h-8 text-red-500";
+            }
+            
+            restartBtn.classList.remove('hidden');
+        }
+
+        // Event listeners for keypad
+        document.querySelectorAll('[data-key]').forEach(button => {
+            button.addEventListener('click', () => {
+                if (!gameActive || enteredPin.length >= 6) return;
+                playSound('click');
+                enteredPin += button.getAttribute('data-key');
+                updatePasswordDisplay();
+            });
+        });
+
+        // Clear button
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            if (!gameActive) return;
+            playSound('click');
+            enteredPin = "";
+            updatePasswordDisplay();
+        });
+
+        // Enter button
+        document.getElementById('enter-btn').addEventListener('click', () => {
+            if (!gameActive || enteredPin.length !== 6) return;
+            
+            playSound('click');
+            
+            if (enteredPin === correctPin) {
+                endGame(true);
+            } else {
+                playSound('error');
+                bombBody.classList.add('shake');
+                setTimeout(() => bombBody.classList.remove('shake'), 500);
+                messageDisplay.textContent = "INCORRECT PIN! TRY AGAIN!";
+                messageDisplay.className = "text-center text-xl font-bold mb-4 min-h-8 text-red-500";
+                enteredPin = "";
+                updatePasswordDisplay();
+                
+                // Hide the message after 2 seconds
+                setTimeout(() => {
+                    if (gameActive) {
+                        messageDisplay.textContent = "";
+                        messageDisplay.className = "text-center text-xl font-bold mb-4 min-h-8";
+                    }
+                }, 2000);
+            }
+        });
+
+        // Restart button
+        restartBtn.addEventListener('click', () => {
+            playSound('click');
+            initGame();
+        });
+
+        // Initialize audio on first user interaction
+        document.addEventListener('click', function initOnFirstClick() {
+            if (!audioContext) {
+                initAudio();
+            }
+            document.removeEventListener('click', initOnFirstClick);
+        });
+
+        // Initialize the game when page loads
+        window.addEventListener('load', initGame);
+    </script>
+</body>
+</html>
